@@ -8,7 +8,7 @@ var parse = function (expr) {
     }
     
     try {
-        var ast = uglify.parser.parse.apply(null, arguments);
+        var ast = uglify.parse(expr);
     }
     catch (err) {
         if (err.message === undefined
@@ -33,13 +33,15 @@ var parse = function (expr) {
 };
 
 var deparse = function (ast, b) {
-    return uglify.uglify.gen_code(ast, { beautify : b });
+    var stream = uglify.OutputStream({ beautify : b });
+    ast.print(stream);
+    return stream.toString();
 };
 
 var burrito = module.exports = function (code, cb) {
-    var ast = code instanceof Array
+    var ast = code instanceof uglify.AST_Node
         ? code // already an ast
-        : parse(code.toString(), false, true)
+        : parse(code.toString())
     ;
     
     var ast_ = traverse(ast).map(function() {
