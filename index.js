@@ -16,6 +16,7 @@ var parse = function (expr) {
         || err.col === undefined
         || err.pos === undefined
         ) { throw err }
+
         
         var e = new SyntaxError(
             err.message
@@ -32,18 +33,16 @@ var parse = function (expr) {
     return ast;
 };
 
-var deparse = function (ast, b) {
-    var stream = uglify.OutputStream({ beautify : b });
+var deparse = function (ast, b, s) {
+    var stream = uglify.OutputStream({ beautify : b, semicolons : s });
     ast.print(stream);
     return stream.toString();
 };
 
 var burrito = module.exports = function (code, cb) {
-    var ast = code instanceof uglify.AST_Node
-        ? code // already an ast
-        : parse(code.toString())
-    ;
-    
+    var ast = code instanceof uglify.AST_Node ? code // already an ast
+        : parse(code.toString());
+
     var ast_ = traverse(ast).map(function() {
         wrapNode(this, cb);
     });
@@ -54,17 +53,16 @@ var burrito = module.exports = function (code, cb) {
 var wrapNode = burrito.wrapNode = function (state, cb) {
     var node = state.node;
     
-    if(!(node instanceof Array && node[0] && typeof node[0] === 'object' &&
-            node[0].name)){
+    if(!(node instanceof uglify.AST_Node)){ //|| node instanceof uglify.AST_Toplevel){
         return undefined;
     }
-    
+
     var self = {
-        name : node[0].name,
+        name: node.TYPE.toLowerCase(),
         node : node,
-        start : node[0].start,
-        end : node[0].end,
-        value : node.slice(1),
+        start : node.start,
+        end : node.end,
+        value: node.body || [],
         state : state
     };
     
@@ -76,10 +74,10 @@ var wrapNode = burrito.wrapNode = function (state, cb) {
         );
         
         if (self.name === 'binary') {
-            var a = deparse(traverse(node[2]).map(function (x) {
+            var a = deparse(traverse(node.left).map(function (x) {
                 if (!this.isRoot) wrapNode(this, cb)
             }));
-            var b = deparse(traverse(node[3]).map(function (x) {
+            var b = deparse(traverse(node.right).map(function (x) {
                 if (!this.isRoot) wrapNode(this, cb)
             }));
         }
@@ -108,7 +106,7 @@ var wrapNode = burrito.wrapNode = function (state, cb) {
                 ;
             }
         }
-        
+
         var expr = parse(src);
         state.update(expr, true);
     };
@@ -141,7 +139,7 @@ var wrapNode = burrito.wrapNode = function (state, cb) {
     
     if (cb) cb.call(state, self);
     
-    if (self.node[0].name === 'conditional') {
+    if (self.node.name === 'conditional') {
         self.wrap('[%s][0]');
     }
     
