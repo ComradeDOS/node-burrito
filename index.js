@@ -1,10 +1,14 @@
-var uglify = require('uglify-js');
-var parser = uglify.parser;
+var uglify = require('uglify-js'),
+    traverse = require('traverse'),
+    vm = require('vm');
+
 var parse = function (expr) {
-    if (typeof expr !== 'string') throw 'expression should be a string';
+    if (!(typeof expr === 'string' || expr instanceof String)){
+        throw new Error('Expression should be a string!');
+    }
     
     try {
-        var ast = parser.parse.apply(null, arguments);
+        var ast = uglify.parser.parse.apply(null, arguments);
     }
     catch (err) {
         if (err.message === undefined
@@ -32,16 +36,13 @@ var deparse = function (ast, b) {
     return uglify.uglify.gen_code(ast, { beautify : b });
 };
 
-var traverse = require('traverse');
-var vm = require('vm');
-
 var burrito = module.exports = function (code, cb) {
     var ast = code instanceof Array
         ? code // already an ast
         : parse(code.toString(), false, true)
     ;
     
-    var ast_ = traverse(ast).map(function mapper () {
+    var ast_ = traverse(ast).map(function() {
         wrapNode(this, cb);
     });
     
@@ -51,16 +52,13 @@ var burrito = module.exports = function (code, cb) {
 var wrapNode = burrito.wrapNode = function (state, cb) {
     var node = state.node;
     
-    var ann = node instanceof Array && node[0]
-    && typeof node[0] === 'object' && node[0].name
-        ? node[0]
-        : null
-    ;
-    
-    if (!ann) return undefined;
+    if(!(node instanceof Array && node[0] && typeof node[0] === 'object' &&
+            node[0].name)){
+        return undefined;
+    }
     
     var self = {
-        name : ann.name,
+        name : node[0].name,
         node : node,
         start : node[0].start,
         end : node[0].end,
@@ -192,10 +190,7 @@ burrito.label = function (node) {
     else if (node.name === 'var') {
         return node.value[0].map(function (x) { return x[0] });
     }
-    else if (node.name === 'defun') {
-        return node.value[0];
-    }
-    else if (node.name === 'function') {
+    else if (['defun', 'function'].indexOf(node.name) != -1) {
         return node.value[0];
     }
     else {
