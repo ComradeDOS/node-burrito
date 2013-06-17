@@ -5,7 +5,7 @@ var vm = require('vm');
 test('ast', function (t) {
     t.plan(2);
     
-    var ast = burrito.parse('f(g(h(5)))', false, true);
+    var ast = burrito.parse('f(g(h(5)))');
     var src = burrito(ast, function (node) {
         if (node.name === 'call') {
             node.wrap(function (s) {
@@ -13,7 +13,7 @@ test('ast', function (t) {
             });
         }
     });
-    
+
     var times = 0;
     t.equal(
         vm.runInNewContext(src, {
