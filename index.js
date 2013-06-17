@@ -36,7 +36,7 @@ var traverse = require('traverse');
 var vm = require('vm');
 
 var burrito = module.exports = function (code, cb) {
-    var ast = Array_isArray(code)
+    var ast = code instanceof Array
         ? code // already an ast
         : parse(code.toString(), false, true)
     ;
@@ -51,7 +51,7 @@ var burrito = module.exports = function (code, cb) {
 var wrapNode = burrito.wrapNode = function (state, cb) {
     var node = state.node;
     
-    var ann = Array_isArray(node) && node[0]
+    var ann = node instanceof Array && node[0]
     && typeof node[0] === 'object' && node[0].name
         ? node[0]
         : null
@@ -201,8 +201,4 @@ burrito.label = function (node) {
     else {
         return null;
     }
-};
-
-var Array_isArray = Array.isArray || function isArray (xs) {
-    return Object.prototype.toString.call(xs) === '[object Array]';
 };
