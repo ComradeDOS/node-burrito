@@ -53,7 +53,7 @@ var burrito = module.exports = function (code, cb) {
 var wrapNode = burrito.wrapNode = function (state, cb) {
     var node = state.node;
     
-    if(!(node instanceof uglify.AST_Node)){ //|| node instanceof uglify.AST_Toplevel){
+    if(!(node instanceof uglify.AST_Node) || node instanceof uglify.AST_Toplevel){
         return undefined;
     }
 
@@ -62,7 +62,6 @@ var wrapNode = burrito.wrapNode = function (state, cb) {
         node : node,
         start : node.start,
         end : node.end,
-        value: node.body || [],
         state : state
     };
     
@@ -173,25 +172,28 @@ burrito.parse = parse;
 burrito.deparse = deparse;
 
 burrito.label = function (node) {
-    if (node.name === 'call') {
-        if (typeof node.value[0] === 'string') {
-            return node.value[0];
+    var ast_node = node.node;
+    if (ast_node instanceof uglify.AST_Call) {
+        if (ast_node.expression instanceof uglify.AST_Symbol) {
+            return ast_node.expression.name;
         }
-        else if (node.value[0] && typeof node.value[0][1] === 'string') {
-            return node.value[0][1];
+        else if (ast_node.expression instanceof uglify.AST_Dot){
+            return ast_node.expression.property;
         }
-        else if (node.value[0][0] === 'dot') {
-            return node.value[0][node.value[0].length - 1];
+        else if (ast_node instanceof uglify.AST_Dot) {
+            return ast_node.property;
         }
         else {
             return null;
         }
     }
-    else if (node.name === 'var') {
-        return node.value[0].map(function (x) { return x[0] });
+    else if (ast_node instanceof uglify.AST_Var) {
+        return ast_node.definitions.map(function (def){
+            return def.name.name;
+        });
     }
-    else if (['defun', 'function'].indexOf(node.name) != -1) {
-        return node.value[0];
+    else if (ast_node instanceof uglify.AST_Lambda) {
+        return ast_node.name instanceof uglify.AST_Symbol ? ast_node.name.name : ast_node.name;
     }
     else {
         return null;
