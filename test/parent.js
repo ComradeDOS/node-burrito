@@ -9,10 +9,11 @@ test('check parent', function (t) {
         if (node.name === 'binary') {
             node.wrap('%a - %b');
         }
-        else if (node.name === 'num') {
-            t.equal(node.parent().value[0][0], 'dot');
+        else if (node.name === 'number') {
+            debugger;
+            t.equal(node.parent().node.expression.TYPE.toLowerCase(), 'dot');
             
-            var fn = node.parent().value[0][2];
+            var fn = node.parent().node.expression.property;
             if (fn === 'sin') {
                 node.wrap('Math.PI / 2');
             }
