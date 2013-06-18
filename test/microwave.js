@@ -27,7 +27,7 @@ test('microwave', function (t) {
 
 test('empty context', function (t) {
     var res = burrito.microwave('Math.sin(2)', function (node) {
-        if (node.name === 'num') node.wrap('Math.PI / %s');
+        if (node.name === 'number') node.wrap('Math.PI / %s');
     });
     t.equal(res, 1);
     t.end();
