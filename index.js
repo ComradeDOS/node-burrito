@@ -33,8 +33,8 @@ var parse = function (expr) {
     return ast;
 };
 
-var deparse = function (ast, b, s) {
-    var stream = uglify.OutputStream({ beautify : b, semicolons : s });
+var deparse = function (ast, b) {
+    var stream = uglify.OutputStream({ beautify : b });
     ast.print(stream);
     return stream.toString();
 };
