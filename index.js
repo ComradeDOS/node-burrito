@@ -47,12 +47,12 @@ var burrito = module.exports = function (code, cb) {
         wrapNode(this, cb);
     });
     
-    return deparse(parse(deparse(ast_)), true);
+    return deparse(ast_, true);
 };
 
 var wrapNode = burrito.wrapNode = function (state, cb) {
     var node = state.node;
-    
+
     if(!(node instanceof uglify.AST_Node) || node instanceof uglify.AST_Toplevel){
         return undefined;
     }
@@ -71,7 +71,7 @@ var wrapNode = burrito.wrapNode = function (state, cb) {
                 if (!this.isRoot) wrapNode(this, cb)
             })
         );
-        
+
         if (self.name === 'binary') {
             var a = deparse(traverse(node.left).map(function (x) {
                 if (!this.isRoot) wrapNode(this, cb)
@@ -151,21 +151,6 @@ burrito.microwave = function (code, context, cb) {
     
     var src = burrito(code, cb);
     return vm.runInNewContext(src, context);
-};
-
-burrito.generateName = function (len) {
-    var name = '';
-    var lower = '$'.charCodeAt(0);
-    var upper = 'z'.charCodeAt(0);
-    
-    while (name.length < len) {
-        var c = String.fromCharCode(Math.floor(
-            Math.random() * (upper - lower + 1) + lower
-        ));
-        if ((name + c).match(/^[A-Za-z_$][A-Za-z0-9_$]*$/)) name += c;
-    }
-    
-    return name;
 };
 
 burrito.parse = parse;
